@@ -1,0 +1,5 @@
+server:
+  port: 8000
+  maxHeaderBytes: 1024
+  readTimeout: 15
+  writeTimeout: 15
