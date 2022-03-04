@@ -25,22 +25,27 @@ func Run(configsDir string) {
 		return
 	}
 
-	postgresClient, err := pgdb.NewClient(cfg.Postgres.URI, cfg.Postgres.User, cfg.Postgres.Password)
-	if err != nil {
+	if err = repository.RunPgMigrations(&cfg.Postgres); err != nil {
 		logger.Error(err)
 		return
 	}
 
-	db := postgresClient.Database(cfg.Postgres.Name)
+	ctx := context.Background()
+	dbConn, err := pgdb.NewClient(ctx, &cfg.Postgres)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	defer dbConn.Close(ctx)
 
-	repo := repository.NewRepositories(db)
+	repos := repository.NewRepositories(dbConn)
 	services := service.NewServices(service.Deps{
-		Repo:   repo,
+		Repos:  repos,
 		Domain: cfg.HTTP.Host,
 	})
 
 	handlers := delivery.NewHandler(services)
-	srv := server.NewServer(cfg, handlers)
+	srv := server.NewServer(cfg, handlers.Init(cfg))
 
 	go func() {
 		if err := srv.Run(); !errors.Is(err, http.ErrServerClosed) {

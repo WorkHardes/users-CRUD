@@ -3,20 +3,23 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/users-CRUD/internal/domain"
 )
 
 type Users interface {
-	GetUser(context.Context, domain.User) (*domain.User, error)
-	CreateUser(context.Context, domain.User) (*domain.User, error)
-	UpdateUser(context.Context, domain.User) (*domain.User, error)
-	DeleteUser(context.Context, domain.User) error
+	Create(ctx context.Context, user domain.User) error
+	GetById(ctx context.Context, id string) (domain.User, error)
+	Update(ctx context.Context, user domain.User) error
+	Delete(ctx context.Context, id string) error
 }
 
 type Repositories struct {
 	Users Users
 }
 
-func NewRepositories() string {
-	return ""
+func NewRepositories(db *pgx.Conn) *Repositories {
+	return &Repositories{
+		Users: NewUserRepo(db),
+	}
 }
